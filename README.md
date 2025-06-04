@@ -3,7 +3,9 @@
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash ~/Miniconda3-latest-Linux-x86_64.sh
+source ~/.bashrc
 ```
+
 For latest installation method, please refer to [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/install#linux-terminal-installer)
 
 1. clone the repo
