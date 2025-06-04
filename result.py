@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -69,10 +69,7 @@ def generate(
 ExLlamaV2BaseGenerator.generate = generate
 
 # === 路徑與參數 ===
-#model_dir = "/home/a313551050/final/Llama-3.2-3B-Instruct-exllama-default-head8b"
-model_dir = "/home/a313551050/final/exllama_model_b4.0_hb6_hsol26"
-#model_dir = "/home/a313551050/final/Llama-3.2-3B-Instruct-exllama-default-head8b"
-#model_dir = "/home/a313551050/final/Llama-3.2-3B-Instruct"
+model_dir = "EdgeAI_final"
 prompt = "How to learn a new language?"
 max_new_tokens = 256
 device = "cuda:1"
@@ -96,7 +93,7 @@ settings.top_k = 1
 
 tputs, time_record = [], []
 
-input_ids = tokenizer.encode(prompt) 
+input_ids = tokenizer.encode(prompt)
 
 #print("Warming up...")
 for _ in range(3):
@@ -108,8 +105,8 @@ for _ in tqdm(range(10), desc="Test Inference"):
     torch.cuda.synchronize()
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
-    start.record()    
-    generated = generator.generate(input_ids, num_tokens=max_new_tokens)    
+    start.record()
+    generated = generator.generate(input_ids, num_tokens=max_new_tokens)
     end.record()
     torch.cuda.synchronize()
     elapsed_ms = start.elapsed_time(end)
@@ -130,7 +127,7 @@ def evaluate_ppl_hf_encode_fixed(model, max_seq_len=2048):
     from transformers import AutoTokenizer
     import torch.nn.functional as F
 
-    hf_tokenizer = AutoTokenizer.from_pretrained("Llama-3.2-3B-Instruct-exllama-default-head8b")
+    hf_tokenizer = AutoTokenizer.from_pretrained(model_dir)
     dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
     text = "\n\n".join(dataset["text"])
 
@@ -162,16 +159,16 @@ def evaluate_ppl_hf_encode_fixed(model, max_seq_len=2048):
 
 def evaluate_ppl(model: ExLlamaV2, tokenizer: ExLlamaV2Tokenizer, device="cuda:0"):
     test_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
-    
+
     test_enc = tokenizer.encode("\n\n".join(test_dataset["text"]))
     model.seqlen = 2048
     test_enc = test_enc.to(model.modules[0].device())
-    
+
     nsamples = test_enc.numel() // model.seqlen
-    nlls = []  
+    nlls = []
     for i in tqdm(range(nsamples), desc="Evaluating..."):
         batch = test_enc[:, (i * model.seqlen):((i + 1) * model.seqlen)]
-        
+
         with torch.no_grad():
             lm_logits = model.forward(batch)
 
@@ -184,7 +181,7 @@ def evaluate_ppl(model: ExLlamaV2, tokenizer: ExLlamaV2Tokenizer, device="cuda:0
         nlls.append(neg_log_likelihood)
 
     ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
-    
+
     return ppl.item()
 
 # === 執行 PPL 測試 ===
